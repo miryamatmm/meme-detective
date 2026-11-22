@@ -1,99 +1,83 @@
-# Meme Detective (MLOps Project)
+# Meme Detective (projet MLOps)
 
-**Meme Detective** est une solution complète de classification de mèmes Internet utilisant une approche MLOps moderne.
+**Meme Detective** classe automatiquement des mèmes Internet parmi 81 catégories, et s'améliore tout seul grâce aux corrections de ses utilisateurs.
 
-Le projet combine un modèle de Vision par Ordinateur (CLIP), une interface utilisateur interactive, un système de réentraînement automatique (Continuous Training) et un **Agent IA** orchestré par n8n pour générer des réponses contextuelles.
+Le projet couvre toute la chaîne MLOps : constitution du dataset par web scraping, modèle de vision (CLIP + XGBoost), API de prédiction, interface utilisateur, réentraînement automatique, monitoring et agent IA.
+
+> Projet réalisé dans le cadre de l'UE Machine Learning du Master Data Science de l'Université Lyon 1 (2025)
 
 ---
 
-##  Fonctionnalités Clés
+## Fonctionnalités
 
-* **Modèle Pré-entraîné** : Le projet inclut les artefacts (`model.pickle`, `pca.pickle`, etc.) et est prêt à l'emploi.
-* **Architecture Micro-services** : Déploiement conteneurisé via Docker (API, Webapp, Orchestrateur, Monitoring).
-* **Continuous Training** : Le modèle se réentraîne automatiquement en arrière-plan grâce au feedback utilisateur (Human-in-the-loop).
-* **Data Pipeline** : Les données d'entraînement initiales ont été constituées via un script de **webscraping** automatisé.
-* **Agent IA** : Intégration de ChatGPT via n8n pour analyser et commenter les prédictions.
+* **Classification d'images** : chaque image est transformée en vecteur par CLIP (ViT-B/32), normalisée, réduite par PCA (512 → 330 dimensions), puis classée par XGBoost.
+* **Réentraînement automatique (humain dans la boucle)** : l'utilisateur corrige une prédiction dans l'interface ; après 5 corrections, l'API réentraîne le modèle en arrière-plan et le recharge sans interruption du service.
+* **Architecture micro-services** : API, interface, orchestrateur et monitoring déployés dans des conteneurs Docker.
+* **Monitoring** : suivi de la dérive des données de production avec Evidently AI.
+* **Agent IA** : workflows n8n qui utilisent l'API OpenAI pour commenter les prédictions et notifier l'utilisateur.
 
-## Installation et Déploiement
+## Résultats
 
-### 1. Pré-requis
-* Docker & Docker Compose installés.
-* Une clé API OpenAI (pour l'Agent IA).
+* Dataset : 81 catégories de mèmes, enrichi par augmentation d'images (rotations, recadrages, variations de couleurs).
+* Accuracy de 0,97 (F1 macro de 0,97) sur le jeu de test.
 
-### 2. Configuration de la Clé API
-L'Agent IA nécessite une clé OpenAI. Créez un fichier `.env` dans le dossier webapp :
+**Limite identifiée :** les augmentations ont été générées avant la séparation train/test, donc des variantes d'une même image peuvent se retrouver dans les deux jeux. Ce score est probablement optimiste ; une évaluation plus fiable séparerait les images d'origine avant de les augmenter.
 
-```bash
-# Créez le fichier .env
-touch .env
-```
+---
 
-Ouvrez ce fichier et ajoutez votre clé :
+## Installation et lancement
+
+### 1. Prérequis
+* Docker et Docker Compose
+* Une clé API OpenAI (pour l'agent IA)
+
+### 2. Clé API
+Créez un fichier `.env` dans le dossier `webapp/` :
+
 ```env
-OPENAI_API_KEY=sk-proj-votre-cle-api-ici...
+OPENAI_API_KEY=sk-proj-votre-cle-api-ici
 ```
 
-### 3. Lancement (Docker)
-Le modèle étant déjà entraîné et présent dans le dépôt Git, vous n'avez pas besoin de lancer de script Python. Déployez simplement les conteneurs (depuis la racine):
+### 3. Lancement
+Le modèle entraîné est fourni dans `artifacts/`, il n'y a rien à entraîner. Depuis la racine :
 
 ```bash
 docker-compose -f serving/docker-compose.yml up -d --build
 docker-compose -f webapp/docker-compose.yml up -d --build
 ```
 
-### 4. Accès aux Services
+### 4. Accès aux services
 
 | Service | URL | Description |
 | :--- | :--- | :--- |
-| **Webapp (Streamlit)** | [http://localhost:8081](http://localhost:8081) | Interface pour tester et corriger le modèle. |
-| **API (FastAPI)** | [http://localhost:8080/docs](http://localhost:8080/docs) | Swagger de l'API de prédiction. |
-| **Orchestrateur (n8n)** | [http://localhost:5678](http://localhost:5678) | Gestion des workflows IA. |
----
+| **Interface (Streamlit)** | [http://localhost:8081](http://localhost:8081) | Tester le modèle et corriger ses prédictions |
+| **API (FastAPI)** | [http://localhost:8080/docs](http://localhost:8080/docs) | Documentation Swagger de l'API |
+| **Orchestrateur (n8n)** | [http://localhost:5678](http://localhost:5678) | Workflows de l'agent IA |
 
-## Configuration de l'Agent IA (n8n)
-
-Les workflows n8n ne sont pas activés par défaut. Vous devez les importer pour activer la boucle de feedback intelligente.
-
-1.  Accédez à **n8n** sur [http://localhost:5678](http://localhost:5678).
-2.  Créez un compte local (admin / password).
-3.  **Importer les Workflows :**
-    * Allez dans le menu (haut droite) → `Import from File`.
-    * Sélectionnez les fichiers `.json` situés dans le dossier `/workflows` de ce projet.
-4.  **Configurer les Credentials :**
-    * Allez dans l'onglet `Credentials` de n8n.
-    * Ajoutez un credential **OpenAI API** avec votre clé.
-    * Assurez-vous que le nœud OpenAI dans le workflow utilise ce credential.
-5.  **Activer** le workflow (bouton "Active" en haut à droite).
+### 5. Activer l'agent IA (n8n)
+1. Ouvrez n8n sur [http://localhost:5678](http://localhost:5678) et créez un compte local.
+2. Importez les fichiers `.json` du dossier `workflows/` (menu en haut à droite → *Import from File*).
+3. Dans *Credentials*, ajoutez un credential **OpenAI API** avec votre clé, et sélectionnez-le dans le nœud OpenAI.
+4. Activez le workflow (bouton *Active*).
 
 ---
 
-## Origine des Données & Entraînement
+## Données
 
-### Dataset (Webscraping)
-Les images utilisées pour entraîner le modèle initial proviennent d'un scraping automatisé via l'API d'un site public de mèmes.
-Le script utilisé est disponible ici : \`scripts/build_dataset_from_tsv.py\`.
+Les images d'entraînement proviennent d'un scraping automatisé de l'API d'un site public de mèmes, avec le script `build_dataset_from_tsv.py`. Il n'est pas nécessaire de le relancer : les modèles entraînés sont fournis.
 
-*Note : Il n'est pas nécessaire d'exécuter ce script pour lancer le projet, car les artefacts entraînés sont fournis.*
-
-### Réentraînement Automatique
-Le système apprend de ses erreurs :
-1.  L'utilisateur corrige une prédiction sur l'interface Webapp.
-2.  L'image et le label correct sont envoyés à l'API.
-3.  L'Agent IA (n8n) notifie l'utilisateur.
-4.  Une fois **5 nouveaux feedbacks** reçus, l'API déclenche un réentraînement en arrière-plan (Hot Reload).
-
----
-
-##  Structure du Projet
+## Structure du projet
 
 ```text
-ML_Project/
-├── artifacts/        # Modèles entraînés (.pickle) inclus dans Git
-├── serving/          # API d'inférence (FastAPI, CLIP, XGBoost)
-├── webapp/           # Interface utilisateur (Streamlit)
-├── workflows/        # Workflows n8n (JSON) pour l'Agent IA
-├── reporting/        # Monitoring (Evidently AI)
-├── scripts/          # Scripts utilitaires (Scraping, Training manuel)
-├── docker-compose.yml
+meme-detective/
+├── artifacts/                 # Modèle, scaler, PCA et encodeur entraînés (.pickle)
+├── serving/                   # API de prédiction et de réentraînement (FastAPI, CLIP, XGBoost)
+├── webapp/                    # Interface utilisateur (Streamlit)
+├── reporting/                 # Monitoring de la dérive (Evidently AI)
+├── workflows/                 # Workflows n8n de l'agent IA
+├── data/                      # Données de production collectées
+├── training.ipynb             # Entraînement initial du modèle
+├── build_dataset_from_tsv.py  # Constitution du dataset par web scraping
+├── predict_test.py            # Test d'une prédiction en local, sans Docker
 └── README.md
 ```
