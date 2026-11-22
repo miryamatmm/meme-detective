@@ -1,0 +1,40 @@
+version: '3.8'
+
+networks:
+  prod_net:
+    driver: bridge
+
+volumes:
+  n8n_data:
+
+services:
+  serving-api:
+    container_name: serving-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ../data:/data
+      - ../artifacts:/artifacts
+    ports:
+      - "8080:8080"
+    networks:
+      - prod_net
+
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    restart: always
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=password
+      - WEBHOOK_URL=http://localhost:5678/
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ../data:/home/node/.n8n-files/data
+    networks:
+      - prod_net

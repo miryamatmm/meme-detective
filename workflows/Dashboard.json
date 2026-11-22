@@ -1,0 +1,61 @@
+{
+  "name": "Dashboard",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "correction-dashboard",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "9f5359ca-47ac-46b3-9960-68d64c29cc90",
+      "name": "Webhook",
+      "webhookId": "5be51ffd-6623-4390-bea2-1542cb68892c"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=<!DOCTYPE html>\n<html>\n<head>\n  <title>Validation MLOps</title>\n  <style>\n    body { font-family: sans-serif; background: #1e1e2e; color: white; text-align: center; padding: 50px; }\n    .card { background: #2b2b40; padding: 30px; border-radius: 10px; display: inline-block; }\n    input, button { width: 100%; padding: 10px; margin: 5px 0; border-radius: 5px; border: none; }\n    .btn-valid { background: #10b981; color: white; cursor: pointer; }\n    .btn-correct { background: #6366f1; color: white; cursor: pointer; }\n  </style>\n</head>\n<body>\n  <div class=\"card\">\n    <h2>Action Requise</h2>\n    <p>Fichier : <strong>{{ $json.query.filename }}</strong></p>\n    <p>Prédiction : {{ $json.query.prediction }}</p>\n\n    <form action=\"http://localhost:5678/webhook/confirm\" method=\"POST\">\n      <input type=\"hidden\" name=\"filename\" value=\"{{ $json.query.filename }}\">\n      <input type=\"hidden\" name=\"label\" value=\"{{ $json.query.prediction }}\">\n      <button type=\"submit\" class=\"btn-valid\">✅ Valider</button>\n    </form>\n\n    <hr style=\"border-color:#444\">\n\n    <form action=\"http://localhost:5678/webhook/confirm\" method=\"POST\">\n      <input type=\"hidden\" name=\"filename\" value=\"{{ $json.query.filename }}\">\n      <input type=\"text\" name=\"label\" placeholder=\"Nouveau label...\" required>\n      <button type=\"submit\" class=\"btn-correct\">💾 Corriger</button>\n    </form>\n  </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        624,
+        0
+      ],
+      "id": "ac027f8e-4819-4a94-a549-2bf956f00c99",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "be245ff1-50f3-4dc9-a0cb-6ed62d3c6e8f",
+  "meta": {
+    "instanceId": "56848eac985db2fbbdf0d8450253fcfbb1365fb15f4c993f45c606564211eaeb"
+  },
+  "id": "isVuokOAR8hrjORlWnpIA",
+  "tags": []
+}

@@ -1,0 +1,13 @@
+requests
+bing-image-downloader
+pandas
+numpy
+Pillow
+torch
+torchvision
+scikit-learn
+xgboost
+fastapi
+uvicorn
+python-multipart
+git+https://github.com/openai/CLIP.git

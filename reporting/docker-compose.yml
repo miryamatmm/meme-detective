@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  reporting:
+    build: .
+    container_name: reporting
+    volumes:
+      - ../data:/data
+      - ./workspace:/app/workspace
+    ports:
+      - "8082:8082"
+    networks:
+      - serving_prod_net
+
+networks:
+  serving_prod_net:
+    external: true 

@@ -1,0 +1,23 @@
+version: '3.8'
+
+networks:
+  serving_prod_net:
+    name: serving_prod_net
+    external: true
+
+services:
+  webapp:
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    container_name: webapp
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8501"
+    volumes:
+      - ../data:/data
+    networks:
+      - serving_prod_net
+    env_file:
+      - ../.env 

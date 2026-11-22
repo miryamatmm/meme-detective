@@ -1,0 +1,130 @@
+{
+  "name": "Agent validation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "confirm",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "9292ed43-8d7d-4cfa-b1ba-d81c22ec03f7",
+      "name": "Webhook",
+      "webhookId": "708ba25b-fd73-4ca8-bafe-473216bed1e8"
+    },
+    {
+      "parameters": {
+        "fileSelector": "=/home/node/.n8n-files/data/temp_uploads/{{ $json.body.filename.trim() }}",
+        "options": {
+          "dataPropertyName": "data"
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "eaa9d16d-8872-4a2a-9bce-c9c92f93130c",
+      "name": "Read/Write Files from Disk"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://serving-api:8080/feedback",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            },
+            {
+              "name": "correct_label",
+              "value": "={{ $('Webhook').item.json.body.label }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "6cd0455d-10f6-4ffd-885a-afff25901e0b",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=<!DOCTYPE html>\n<html>\n<body style=\"background:#1e1e2e; color:white; font-family:sans-serif; text-align:center; padding-top:50px;\">\n  <h1 style=\"color:#10b981;\">🎉 Succès !</h1>\n  \n  <p>L'image <strong>{{ $('Webhook').item.json.body.filename }}</strong> a bien été déplacée.</p>\n  \n  <p>Label validé : \n    <span style=\"background:#6366f1; padding:5px 10px; border-radius:4px; font-weight:bold;\">\n      {{ $('Webhook').item.json.body.label }}\n    </span>\n  </p>\n  \n  <p style=\"color:#aaa; font-size:0.9em; margin-top:20px;\">L'IA a été mise à jour.</p>\n  <button onclick=\"window.close()\" style=\"margin-top:20px; padding:10px 20px; cursor:pointer; border:none; border-radius:4px; background:#fff; color:#333;\">Fermer</button>\n</body>\n</html>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        624,
+        0
+      ],
+      "id": "b7bf7815-7cc6-45c3-b687-c7915d90a471",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "cdf7f88a-c52a-4a78-8249-a9eb6deecaaf",
+  "meta": {
+    "instanceId": "56848eac985db2fbbdf0d8450253fcfbb1365fb15f4c993f45c606564211eaeb"
+  },
+  "id": "xAz4KWdW2j_F8n73P8plR",
+  "tags": []
+}
